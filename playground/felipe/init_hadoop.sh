@@ -1,5 +1,10 @@
 #! /bin/bash
 
+### Desde playground/felipe (en compu local o en docker)
+
+# Generar datasets dummies para los mayores a 20 MB para pruebas
+./generate_dummy_csv data/raw 20000000
+
 # Crear la instancia
 docker run -ti --name hadoop-pseudo-proyecto2 \
 	   -v /Users/Felipe/data-science/final-big-data:/home/itam/localhost \
@@ -12,6 +17,9 @@ docker run -ti --name hadoop-pseudo-proyecto2 \
 	   --net=host \
 	   nanounanue/docker-hadoop
 # ISSUE [SOLVED]: En algunas redes se necesita el --net=host
+
+# Cambiar al usuario itam
+su itam
 
 # Para tener el comando man
 sudo apt-get install man-db
@@ -32,7 +40,7 @@ sudo -u hdfs hadoop fs -mkdir /user/itam
 sudo -u hdfs hadoop fs -chown itam:itam /user/itam
 
 #---------------------------------------------------------------------------------------------------------------
-# Generar el esquema de los datos (desde playground)
+# Generar el esquema de los datos (desde playground/felipe)
 curl http://gdeltproject.org/data/lookups/CSV.header.dailyupdates.txt > data/gdelt_headers.tsv
 unzip -p data/raw/20130412.export.CSV.zip | cat data/gdelt_headers.tsv - > data/schema/20130412.export.CSV
 kite-dataset csv-schema data/schema/20130412.export.CSV --class GDELT --delimiter "\t" -o data/schema/gdelt_raw20130412.avsc
@@ -40,13 +48,14 @@ kite-dataset csv-schema data/schema/20130412.export.CSV --class GDELT --delimite
 # ISSUE: POR QUE AL LEER EL CSV DE 20130409 LEE PUROS NULLS??
 # [SOLVED] Tiene que tener los headers para que lo lea! Para leer con Flume no hacen falta, así que no los ponemos después.
 
-# Crear el dataset en el hive metastore (desde playground)
+# Crear el dataset en el hive metastore (desde playground/felipe)
 kite-dataset create dataset:hive:gdelt --schema data/schema/gdelt.avsc 
 
 # El dataset queda en: /user/hive/warehouse/gdelt
 hadoop fs -ls -R /user/hive
 
 #---------------------------------------------------------------------------------------------------------------
+### BEGIN NOT RUN ###
 # Probamos importar unos datos
 #unzip -p data/raw/20130412.export.CSV.zip | cat data/gdelt_headers.tsv - > data/spool/20130412.export.CSV
 #kite-dataset csv-import data/spool/20130412.export.CSV dataset:hive:gdelt --delimiter "\t"
@@ -60,16 +69,18 @@ hadoop fs -ls -R /user/hive
 # Borramos el dataset de pruebas (hay que crearlo de nuevo)
 #kite-dataset delete dataset:hive:gdelt
 
+### END NOT RUN ###
 
 #---------------------------------------------------------------------------------------------------------------
-# Correr el agente de flume (desde playground)
+# Correr el agente de flume (desde playground/felipe)
 # NOTA: Preferí usar un sink en Avro directo al HDFS en lugar de la cosa experimental con Kite
 flume-ng agent -n GDELTAgent -Xmx300m --conf flume -f flume/gdelt-agent.conf
 
 # Abrir otra conexión al contenedor (desde otra terminal)
 docker exec -it hadoop-pseudo-proyecto /bin/zsh
+su itam
 
-# Correr el código que baja los datos y los mete al spoolDir (desde playground)
+# Correr el código que baja los datos y los mete al spoolDir (desde playground/felipe)
 ./process_background.sh data/raw data/spool 5
 
 #---------------------------------------------------------------------------------------------------------------

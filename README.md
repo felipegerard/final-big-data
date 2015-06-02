@@ -3,4 +3,4 @@ Proyecto final. Métodos de Gran Escala
 
 
 
-**NOTA:** Por favor hagan una branch del proyecto para que no choquemos y al final lo juntamos :)
+**NOTA:** Cada quien tiene su carpeta dentro de playground. Ahí hagan sus pruebas de concepto y todo. Cuando esté listo, lo acordamos y lo juntamos afuera.
